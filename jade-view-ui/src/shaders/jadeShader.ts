@@ -2,8 +2,8 @@ export const jadeVertexShader = `
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
-  varying vec3 vWorldPosition;
   varying vec3 vObjectPosition;
+  varying vec3 vWorldPosition;
 
   void main() {
     vUv = uv;
@@ -17,22 +17,24 @@ export const jadeVertexShader = `
 `
 
 export const jadeFragmentShader = `
+  precision mediump float;
+
   uniform float uTime;
   uniform vec3 uColor;
   uniform vec3 uInnerColor;
   uniform float uTransparency;
   uniform float uRoughness;
-  uniform float uRefraction;
   uniform float uCottonDensity;
   uniform float uOilWetness;
   uniform vec3 uLightPosition;
   uniform float uLightIntensity;
+  uniform float uQualityLevel;
 
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
-  varying vec3 vWorldPosition;
   varying vec3 vObjectPosition;
+  varying vec3 vWorldPosition;
 
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -82,15 +84,17 @@ export const jadeFragmentShader = `
     return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
   }
 
-  float fbm(vec3 p) {
+  float fbm3(vec3 p) {
     float value = 0.0;
     float amplitude = 0.5;
     float frequency = 1.0;
-    for (int i = 0; i < 5; i++) {
-      value += amplitude * snoise(p * frequency);
-      amplitude *= 0.5;
-      frequency *= 2.0;
-    }
+    value += amplitude * snoise(p * frequency);
+    amplitude *= 0.5;
+    frequency *= 2.0;
+    value += amplitude * snoise(p * frequency);
+    amplitude *= 0.5;
+    frequency *= 2.0;
+    value += amplitude * snoise(p * frequency);
     return value;
   }
 
@@ -100,52 +104,80 @@ export const jadeFragmentShader = `
     vec3 lightDir = normalize(uLightPosition - vWorldPosition);
     vec3 halfDir = normalize(lightDir + viewDir);
 
-    float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.0);
+    float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);
 
-    vec3 objPosScaled = vObjectPosition * 2.5;
-    float cottonNoise = fbm(objPosScaled + vec3(uTime * 0.02));
-    float cottonPattern = smoothstep(0.15, 0.55, cottonNoise) * uCottonDensity;
+    vec3 objPos = vObjectPosition * 2.5;
 
-    float veinNoise = fbm(objPosScaled * 4.0);
-    float veins = smoothstep(0.55, 0.85, veinNoise) * 0.25;
+    float baseNoise = fbm3(objPos + vec3(uTime * 0.015));
+    float cottonPattern = smoothstep(0.1, 0.5, baseNoise) * uCottonDensity;
 
     float depthFactor = 0.5 + 0.5 * vObjectPosition.y;
     vec3 baseColor = mix(uInnerColor, uColor, depthFactor);
     baseColor = mix(baseColor, vec3(0.92, 0.98, 0.88), cottonPattern * 0.35);
-    baseColor = mix(baseColor, uInnerColor * 0.65, veins);
+
+    if (uQualityLevel > 0.5) {
+      float veinNoise = fbm3(objPos * 4.0);
+      float veins = smoothstep(0.6, 0.85, veinNoise) * 0.18;
+      baseColor = mix(baseColor, uInnerColor * 0.7, veins);
+    }
 
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = baseColor * diff * uLightIntensity;
 
-    float specPow = mix(16.0, 96.0, 1.0 - uRoughness);
+    float specPow = mix(16.0, 64.0, 1.0 - uRoughness);
     float spec = pow(max(dot(normal, halfDir), 0.0), specPow);
-    vec3 specular = vec3(1.0, 0.98, 0.92) * spec * (0.4 + uOilWetness * 0.8) * uLightIntensity;
+    vec3 specular = vec3(1.0, 0.98, 0.92) * spec * (0.35 + uOilWetness * 0.7) * uLightIntensity;
 
-    vec3 reflectDir = reflect(-viewDir, normal);
-    float envLight = max(dot(reflectDir, normalize(vec3(0.5, 1.0, 0.5))), 0.0);
-    vec3 ambient = baseColor * (0.28 + 0.18 * envLight);
+    vec3 ambient = baseColor * 0.32;
 
-    float rim = pow(1.0 - max(dot(normal, viewDir), 0.0), 5.0);
-    vec3 rimLight = vec3(0.7, 1.0, 0.78) * rim * 0.5 * uLightIntensity;
+    float rim = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 4.0);
+    vec3 rimLight = vec3(0.7, 1.0, 0.78) * rim * 0.4 * uLightIntensity;
 
-    vec3 subsurface = vec3(0.0);
-    for (int i = 0; i < 3; i++) {
-      float offset = float(i) * 0.25;
-      vec3 samplePos = vObjectPosition + normal * offset;
-      float ssNoise = fbm(samplePos * 3.0);
-      subsurface += uInnerColor * ssNoise * 0.12 * uTransparency;
-    }
+    float ssAmount = uTransparency * 0.15;
+    float ssNoise = fbm3(objPos * 2.0 + normal * 0.3);
+    vec3 subsurface = uInnerColor * ssNoise * ssAmount;
 
-    float alpha = mix(0.82, 0.98, 1.0 - uTransparency);
-    alpha = mix(alpha, 0.72, fresnel * 0.35);
-    alpha = mix(alpha, 0.95, cottonPattern * 0.5);
+    float alpha = mix(0.85, 0.98, 1.0 - uTransparency);
+    alpha = mix(alpha, 0.75, fresnel * 0.3);
+    alpha = mix(alpha, 0.95, cottonPattern * 0.4);
 
     vec3 finalColor = ambient + diffuse + specular + rimLight + subsurface;
-    finalColor = mix(finalColor, uColor * 1.15, fresnel * 0.25);
+    finalColor = mix(finalColor, uColor * 1.12, fresnel * 0.22);
 
-    float noiseMicro = snoise(vObjectPosition * 50.0) * 0.025;
-    finalColor += noiseMicro;
+    gl_FragColor = vec4(finalColor, alpha);
+  }
+`
 
+export const jadeSimpleFragmentShader = `
+  precision mediump float;
+
+  uniform vec3 uColor;
+  uniform vec3 uInnerColor;
+  uniform float uTransparency;
+  uniform float uOilWetness;
+  uniform float uLightIntensity;
+
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying vec3 vWorldPosition;
+
+  void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 viewDir = normalize(vViewPosition);
+    vec3 lightDir = normalize(vec3(5.0, 8.0, 5.0) - vWorldPosition);
+    vec3 halfDir = normalize(lightDir + viewDir);
+
+    float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 2.5);
+
+    float diff = max(dot(normal, lightDir), 0.0);
+    float spec = pow(max(dot(normal, halfDir), 0.0), 48.0);
+
+    vec3 baseColor = mix(uInnerColor, uColor, 0.5 + 0.5 * vViewPosition.y * 0.1);
+    vec3 finalColor = baseColor * (0.35 + diff * uLightIntensity)
+                    + vec3(1.0, 0.98, 0.92) * spec * (0.3 + uOilWetness * 0.6) * uLightIntensity;
+    finalColor = mix(finalColor, uColor * 1.1, fresnel * 0.2);
+
+    float alpha = mix(0.88, 0.96, 1.0 - uTransparency);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
