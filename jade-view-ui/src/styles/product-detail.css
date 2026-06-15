@@ -1,0 +1,145 @@
+.product-detail {
+  color: #e8dcc8;
+}
+
+.product-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(184, 134, 11, 0.35) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #ffd700;
+  font-size: 12px;
+  border-radius: 4px;
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+}
+
+.product-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f5f0e6;
+  margin-bottom: 6px;
+  letter-spacing: 2px;
+  line-height: 1.4;
+}
+
+.product-category {
+  font-size: 13px;
+  color: #7fffd4;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.product-price {
+  margin-bottom: 28px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.2) 0%, rgba(160, 82, 45, 0.15) 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.product-price .currency {
+  font-size: 18px;
+  color: #ffd700;
+  margin-right: 4px;
+  vertical-align: top;
+}
+
+.product-price .amount {
+  font-size: 32px;
+  color: #ffd700;
+  font-weight: 600;
+  font-family: 'Georgia', serif;
+  letter-spacing: 2px;
+}
+
+.info-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  color: #98fb98;
+  letter-spacing: 3px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(144, 238, 144, 0.15);
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, #7fffd4 0%, transparent 100%);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-label {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 2px;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #d4c8a8;
+}
+
+.info-value.highlight {
+  color: #7fffd4;
+  font-weight: 500;
+}
+
+.info-value.code {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+  padding: 6px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.product-description {
+  font-size: 13px;
+  color: #a89880;
+  line-height: 1.9;
+  letter-spacing: 1px;
+  text-align: justify;
+}
+
+.feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.tag {
+  padding: 5px 12px;
+  background: rgba(60, 179, 113, 0.12);
+  border: 1px solid rgba(60, 179, 113, 0.25);
+  color: #98fb98;
+  font-size: 11px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}

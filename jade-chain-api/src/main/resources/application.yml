@@ -1,0 +1,44 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: jade-chain-api
+
+  datasource:
+    url: jdbc:h2:mem:jadedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+blockchain:
+  consortium:
+    rpc-url: http://localhost:8545
+    chain-id: 1337
+    contract-address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    private-key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+logging:
+  level:
+    com.jadechain: DEBUG
+    org.springframework.security: INFO

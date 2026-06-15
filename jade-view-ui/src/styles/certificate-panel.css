@@ -1,0 +1,233 @@
+.certificate-panel {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(10, 25, 15, 0.95) 0%, rgba(5, 15, 10, 0.98) 100%);
+  border: 1px solid rgba(144, 238, 144, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.certificate-panel.loading,
+.certificate-panel.error {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(144, 238, 144, 0.2);
+  border-top-color: #7fffd4;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.certificate-panel.loading p,
+.error-text {
+  color: #888;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.error-text {
+  color: #d4a574;
+}
+
+.cert-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(144, 238, 144, 0.1);
+}
+
+.cert-icon {
+  font-size: 32px;
+}
+
+.cert-title-group {
+  flex: 1;
+}
+
+.cert-title {
+  font-size: 16px;
+  color: #f5f0e6;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+
+.cert-subtitle {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 2px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.status-badge.verified {
+  background: rgba(60, 179, 113, 0.2);
+  color: #98fb98;
+  border: 1px solid rgba(60, 179, 113, 0.4);
+}
+
+.status-badge.pending {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.status-badge.failed {
+  background: rgba(178, 34, 34, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(178, 34, 34, 0.4);
+}
+
+.cert-info {
+  margin-bottom: 18px;
+}
+
+.cert-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.cert-row:last-child {
+  border-bottom: none;
+}
+
+.cert-label {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+.cert-value {
+  font-size: 12px;
+  color: #d4c8a8;
+}
+
+.cert-value.mono {
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.cert-value.hash {
+  color: #7fffd4;
+  cursor: pointer;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cert-metadata {
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.meta-title {
+  font-size: 12px;
+  color: #98fb98;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.meta-label {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 1px;
+}
+
+.meta-value {
+  font-size: 12px;
+  color: #c8bea8;
+}
+
+.meta-value.mono {
+  font-family: 'Monaco', monospace;
+  font-size: 11px;
+  color: #ffd700;
+}
+
+.verify-result {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.verify-result.success {
+  background: rgba(60, 179, 113, 0.15);
+  color: #98fb98;
+  border: 1px solid rgba(60, 179, 113, 0.3);
+}
+
+.verify-result.failed {
+  background: rgba(178, 34, 34, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(178, 34, 34, 0.3);
+}
+
+.verify-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #2e8b57 0%, #1a5f3d 100%);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+}
+
+.verify-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3cb371 0%, #2e8b57 100%);
+  box-shadow: 0 4px 16px rgba(60, 179, 113, 0.4);
+}
+
+.verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cert-footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(144, 238, 144, 0.08);
+  text-align: center;
+}
+
+.cert-footer p {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 1px;
+}
