@@ -29,6 +29,8 @@ export const jadeFragmentShader = `
   uniform vec3 uLightPosition;
   uniform float uLightIntensity;
   uniform float uQualityLevel;
+  uniform float uFlashlightOn;
+  uniform vec3 uFlashlightPos;
 
   varying vec2 vUv;
   varying vec3 vNormal;
@@ -137,11 +139,74 @@ export const jadeFragmentShader = `
     float ssNoise = fbm3(objPos * 2.0 + normal * 0.3);
     vec3 subsurface = uInnerColor * ssNoise * ssAmount;
 
+    vec3 flashlightEffect = vec3(0.0);
+
+    if (uFlashlightOn > 0.5) {
+      vec3 toFlash = vWorldPosition - uFlashlightPos;
+      float flashDist = length(toFlash);
+      vec3 flashDir = normalize(toFlash);
+
+      float spotRadius = 0.7;
+      float spotFalloff = 1.0 / (1.0 + flashDist * flashDist * 0.5);
+      float spotCutoff = smoothstep(spotRadius, spotRadius * 0.15, flashDist);
+
+      float NdotL = max(dot(normal, -flashDir), 0.0);
+      float wrapLight = max(dot(normal, -flashDir) * 0.5 + 0.5, 0.0);
+
+      float flashDiffuse = wrapLight * spotCutoff * spotFalloff;
+
+      vec3 flashHalf = normalize(-flashDir + viewDir);
+      float flashSpec = pow(max(dot(normal, flashHalf), 0.0), 64.0);
+      flashSpec *= spotCutoff * spotFalloff;
+
+      vec3 warmLight = vec3(1.0, 0.95, 0.85);
+
+      float fiberBase = snoise(vObjectPosition * 18.0);
+      float fiberDetail = snoise(vObjectPosition * 40.0 + vec3(uTime * 0.03, 0.0, 0.0));
+      float fiberPattern = abs(fiberBase) * 0.6 + abs(fiberDetail) * 0.4;
+      fiberPattern = pow(fiberPattern, 0.8);
+
+      float silkSheen = pow(abs(fiberBase), 2.0) * abs(fiberDetail);
+      silkSheen = smoothstep(0.2, 0.8, silkSheen);
+
+      float transmittance = (1.0 - NdotL) * 0.35 + 0.15;
+      transmittance *= spotCutoff * spotFalloff;
+
+      vec3 silkColor = mix(
+        uInnerColor * 1.4,
+        vec3(0.95, 1.0, 0.9),
+        silkSheen * 0.5
+      );
+
+      vec3 fiberGlow = silkColor * fiberPattern * transmittance * 1.8;
+
+      vec3 transColor = mix(uInnerColor * 1.2, vec3(0.95, 1.0, 0.88), transmittance * 0.6);
+
+      flashlightEffect = warmLight * flashDiffuse * 2.5 * baseColor
+                       + warmLight * flashSpec * 1.5
+                       + fiberGlow
+                       + transColor * transmittance * 0.6;
+
+      float hotSpot = smoothstep(0.15, 0.0, flashDist) * spotFalloff;
+      flashlightEffect += vec3(1.0, 0.98, 0.92) * hotSpot * 0.8;
+
+      subsurface += uInnerColor * transmittance * 0.3;
+    }
+
     float alpha = mix(0.85, 0.98, 1.0 - uTransparency);
     alpha = mix(alpha, 0.75, fresnel * 0.3);
     alpha = mix(alpha, 0.95, cottonPattern * 0.4);
 
-    vec3 finalColor = ambient + diffuse + specular + rimLight + subsurface;
+    if (uFlashlightOn > 0.5) {
+      vec3 toFlash2 = vWorldPosition - uFlashlightPos;
+      float flashDist2 = length(toFlash2);
+      float spotCutoff2 = smoothstep(0.7, 0.1, flashDist2);
+      float wrapL = max(dot(normal, -normalize(toFlash2)) * 0.5 + 0.5, 0.0);
+      float transAmt = wrapL * spotCutoff2 * uTransparency * 0.2;
+      alpha = mix(alpha, 0.6, transAmt);
+    }
+
+    vec3 finalColor = ambient + diffuse + specular + rimLight + subsurface + flashlightEffect;
     finalColor = mix(finalColor, uColor * 1.12, fresnel * 0.22);
 
     gl_FragColor = vec4(finalColor, alpha);
@@ -156,6 +221,8 @@ export const jadeSimpleFragmentShader = `
   uniform float uTransparency;
   uniform float uOilWetness;
   uniform float uLightIntensity;
+  uniform float uFlashlightOn;
+  uniform vec3 uFlashlightPos;
 
   varying vec3 vNormal;
   varying vec3 vViewPosition;
@@ -178,6 +245,18 @@ export const jadeSimpleFragmentShader = `
     finalColor = mix(finalColor, uColor * 1.1, fresnel * 0.2);
 
     float alpha = mix(0.88, 0.96, 1.0 - uTransparency);
+
+    if (uFlashlightOn > 0.5) {
+      vec3 toFlash = vWorldPosition - uFlashlightPos;
+      float flashDist = length(toFlash);
+      float spot = smoothstep(0.7, 0.1, flashDist);
+      float wrapL = max(dot(normal, -normalize(toFlash)) * 0.5 + 0.5, 0.0);
+      float intensity = spot * wrapL;
+      finalColor += uInnerColor * intensity * 2.0;
+      finalColor += vec3(1.0, 0.95, 0.85) * intensity * 0.8;
+      alpha = mix(alpha, 0.65, intensity * uTransparency * 0.3);
+    }
+
     gl_FragColor = vec4(finalColor, alpha);
   }
 `

@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as THREE from 'three'
@@ -37,13 +37,17 @@ function createBeadTransforms(count: number, radius: number) {
 export default function JadeModel({ modelUrl, beadCount = BEAD_COUNT }: JadeModelProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const groupRef = useRef<THREE.Group>(null)
-  const lodRef = useRef<THREE.LOD>(null)
-  const { camera } = useThree()
-  const { rotationSpeed, lightIntensity, showInternalStructure } = useJadeStore()
+  const { camera, gl } = useThree()
+  const {
+    rotationSpeed, lightIntensity, showInternalStructure,
+    flashlightOn, flashlightPos, setFlashlightPos
+  } = useJadeStore()
   const [qualityLevel, setQualityLevel] = useState<number>(1)
   const [gpuOverloaded, setGpuOverloaded] = useState(false)
   const frameTimes = useRef<number[]>([])
   const lastCheckTime = useRef(0)
+  const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const mouseVec = useMemo(() => new THREE.Vector2(), [])
 
   const beadTransforms = useMemo(() => createBeadTransforms(beadCount, BRACELET_RADIUS), [beadCount])
   const dummy = useMemo(() => new THREE.Object3D(), [])
@@ -58,13 +62,42 @@ export default function JadeModel({ modelUrl, beadCount = BEAD_COUNT }: JadeMode
     uOilWetness: { value: 0.82 },
     uLightPosition: { value: new THREE.Vector3(5, 8, 5) },
     uLightIntensity: { value: lightIntensity },
-    uQualityLevel: { value: qualityLevel }
+    uQualityLevel: { value: qualityLevel },
+    uFlashlightOn: { value: flashlightOn ? 1.0 : 0.0 },
+    uFlashlightPos: { value: new THREE.Vector3(flashlightPos[0], flashlightPos[1], flashlightPos[2]) }
   }), [qualityLevel])
 
   useEffect(() => {
     uniforms.uLightIntensity.value = lightIntensity
     uniforms.uCottonDensity.value = showInternalStructure ? 0.55 : 0.28
-  }, [lightIntensity, showInternalStructure, uniforms])
+    uniforms.uFlashlightOn.value = flashlightOn ? 1.0 : 0.0
+  }, [lightIntensity, showInternalStructure, flashlightOn, uniforms])
+
+  useEffect(() => {
+    uniforms.uFlashlightPos.value.set(flashlightPos[0], flashlightPos[1], flashlightPos[2])
+  }, [flashlightPos, uniforms])
+
+  const handlePointerMove = useCallback((event: MouseEvent) => {
+    if (!flashlightOn || !meshRef.current) return
+    const rect = gl.domElement.getBoundingClientRect()
+    mouseVec.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    mouseVec.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+    raycaster.setFromCamera(mouseVec, camera)
+    const intersects = raycaster.intersectObject(meshRef.current, false)
+    if (intersects.length > 0) {
+      const point = intersects[0].point
+      setFlashlightPos([point.x, point.y, point.z])
+    }
+  }, [flashlightOn, camera, gl, raycaster, mouseVec, setFlashlightPos])
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    canvas.addEventListener('pointermove', handlePointerMove)
+    return () => {
+      canvas.removeEventListener('pointermove', handlePointerMove)
+    }
+  }, [gl, handlePointerMove])
 
   const highQualityMaterial = useMemo(() => new THREE.ShaderMaterial({
     vertexShader: jadeVertexShader,
@@ -83,7 +116,9 @@ export default function JadeModel({ modelUrl, beadCount = BEAD_COUNT }: JadeMode
       uInnerColor: uniforms.uInnerColor,
       uTransparency: uniforms.uTransparency,
       uOilWetness: uniforms.uOilWetness,
-      uLightIntensity: uniforms.uLightIntensity
+      uLightIntensity: uniforms.uLightIntensity,
+      uFlashlightOn: uniforms.uFlashlightOn,
+      uFlashlightPos: uniforms.uFlashlightPos
     },
     transparent: true,
     side: THREE.FrontSide,
@@ -124,16 +159,14 @@ export default function JadeModel({ modelUrl, beadCount = BEAD_COUNT }: JadeMode
 
   const highGeo = useMemo(() => {
     if (loadedModelGeometry.current) {
-      const geo = loadedModelGeometry.current.clone()
-      return geo
+      return loadedModelGeometry.current.clone()
     }
     return new THREE.SphereGeometry(0.45, 64, 64)
   }, [loadedModelGeometry.current])
 
   const midGeo = useMemo(() => {
     if (loadedModelGeometry.current) {
-      const simplified = loadedModelGeometry.current.clone()
-      return simplified
+      return loadedModelGeometry.current.clone()
     }
     return new THREE.SphereGeometry(0.45, 32, 32)
   }, [loadedModelGeometry.current])
@@ -195,20 +228,17 @@ export default function JadeModel({ modelUrl, beadCount = BEAD_COUNT }: JadeMode
 
   return (
     <group ref={groupRef}>
-      <LOD ref={lodRef} object={undefined as any}>
+      {qualityLevel > 0.6 ? (
         <instancedMesh
+          ref={meshRef}
           args={[highGeo, highQualityMaterial, beadCount]}
-          distance={0}
           frustumCulled={false}
-          ref={qualityLevel > 0.6 ? meshRef : undefined}
         />
-      </LOD>
-
-      {qualityLevel <= 0.6 && (
+      ) : (
         <instancedMesh
+          ref={meshRef}
           args={[midGeo, qualityLevel > 0.3 ? highQualityMaterial : lowQualityMaterial, beadCount]}
           frustumCulled={false}
-          ref={meshRef}
         />
       )}
     </group>

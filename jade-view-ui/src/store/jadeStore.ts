@@ -12,6 +12,10 @@ interface JadeState {
   setLightIntensity: (intensity: number) => void
   showInternalStructure: boolean
   setShowInternalStructure: (show: boolean) => void
+  flashlightOn: boolean
+  setFlashlightOn: (on: boolean) => void
+  flashlightPos: [number, number, number]
+  setFlashlightPos: (pos: [number, number, number]) => void
 }
 
 const mockJade: JadeProduct = {
@@ -40,5 +44,9 @@ export const useJadeStore = create<JadeState>((set) => ({
   lightIntensity: 1.2,
   setLightIntensity: (intensity) => set({ lightIntensity: intensity }),
   showInternalStructure: false,
-  setShowInternalStructure: (show) => set({ showInternalStructure: show })
+  setShowInternalStructure: (show) => set({ showInternalStructure: show }),
+  flashlightOn: false,
+  setFlashlightOn: (on) => set({ flashlightOn: on }),
+  flashlightPos: [0, 0, 0],
+  setFlashlightPos: (pos) => set({ flashlightPos: pos })
 }))

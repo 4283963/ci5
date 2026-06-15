@@ -8,7 +8,9 @@ export default function ViewerControls() {
     lightIntensity,
     setLightIntensity,
     showInternalStructure,
-    setShowInternalStructure
+    setShowInternalStructure,
+    flashlightOn,
+    setFlashlightOn
   } = useJadeStore()
 
   return (
@@ -60,10 +62,31 @@ export default function ViewerControls() {
         </button>
       </div>
 
+      <div className="control-group toggle-group flashlight-group">
+        <div className="control-label">
+          <span className="control-icon">🔦</span>
+          鉴赏手电
+        </div>
+        <button
+          className={`toggle-btn flashlight-btn ${flashlightOn ? 'active' : ''}`}
+          onClick={() => setFlashlightOn(!flashlightOn)}
+        >
+          {flashlightOn ? '照射中' : '开启'}
+        </button>
+      </div>
+
+      {flashlightOn && (
+        <div className="flashlight-hint">
+          <div className="hint-icon">🔦</div>
+          <div className="hint-text">手电筒已开启，移动鼠标照射玉石查看内部纤维结构</div>
+        </div>
+      )}
+
       <div className="control-tips">
         <div className="tip-item">🖱️ 拖拽：360°旋转</div>
         <div className="tip-item">🔍 滚轮：放大缩小</div>
         <div className="tip-item">✋ 右键：平移视角</div>
+        <div className="tip-item flashlight-tip">🔦 手电：贴照透光</div>
       </div>
     </div>
   )
